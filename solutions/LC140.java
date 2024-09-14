@@ -1,36 +1,6 @@
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-/**
- * LC139
- */
-public class LC140 {
-    public static void main(String[] args) {
-        Object[] testCase = { "somewords", List.of("some", "words") };
-        executeAndPrint(Solution.class, testCase);
-    }
-
-    private static void executeAndPrint(Class<?> solutionClass, Object... params) {
-        try {
-            Object solutionObject = solutionClass.getDeclaredConstructor().newInstance();
-
-            Method solutionMethod = Arrays.stream(solutionClass.getDeclaredMethods())
-                    .filter(method -> Modifier.isPublic(method.getModifiers())).findFirst().orElseThrow();
-            var solutionResult = solutionMethod.invoke(solutionObject, params);
-            System.out.println(solutionResult);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-}
 
 class Solution {
     public boolean wordBreak(String s, List<String> wordDict) {

@@ -1,31 +1,8 @@
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.IntStream;
-
-class LC354 {
-    public static void main(String[] args) {
-        int[][][] testCases = {
-                { { 5, 4 }, { 6, 4 }, { 6, 7 }, { 2, 3 } },
-                { { 5, 4 }, { 6, 4 }, { 2, 3 } },
-                { { 1, 1 }, { 1, 1 }, { 1, 1 } },
-                { { 1, 3 }, { 3, 5 }, { 6, 7 }, { 6, 8 }, { 8, 4 }, { 9, 5 } },
-                { { 1, 15 }, { 7, 18 }, { 7, 6 }, { 7, 100 }, { 2, 200 }, { 17, 30 }, { 17, 45 }, { 3, 5 }, { 7, 8 }, { 3, 6 }, { 3, 10 }, { 7, 20 }, { 17, 3 }, { 17, 45 } },
-                {{8,18},{4,14},{16,1},{9,11},{14,15},{12,19},{2,15},{4,4},{18,3},{20,8},{19,18},{18,2},{1,10},{12,1},{10,16},{1,1},{3,19}}
-        };
-
-        for (int i = 0; i < testCases.length; i++) {
-            var result = new Solution().maxEnvelopes(testCases[i]);
-            System.out.println(result);
-            System.out.println("-----");
-        }
-    }
-}
 
 record Envelope(int width, int height) {}
 

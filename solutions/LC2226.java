@@ -1,11 +1,6 @@
 import java.util.Arrays;
 
 class LC2226 {
-    public static void main(String[] args) {
-        LC2226 tc = new LC2226();
-        System.out.println(tc.maximumCandies(new int[]{5, 8, 6}, 3));
-        System.out.println(tc.maximumCandies(new int[]{2, 5}, 11));
-    }
 
     public int maximumCandies(int[] candies, long k) {
         long sum = Arrays.stream(candies).mapToLong(Long::valueOf).sum();

@@ -1,18 +1,6 @@
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * LC76
- */
-public class LC76 {
-
-    public static void main(String[] args) {
-        Solution sol = new Solution();
-
-        System.out.println(sol.minWindow("ADOBECODEBANC", "ABC"));
-    }
-}
-
 class Solution {
     public String minWindow(String s, String t) {
         Map<Character, Integer> tMap = new HashMap<>();

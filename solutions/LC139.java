@@ -2,17 +2,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-/**
- * LC139
- */
-public class LC139 {
-    public static void main(String[] args) {
-        var sol = new Solution();
-
-    }
-    
-}
-
 class Solution {
     public boolean wordBreak(String s, List<String> wordDict) {
         Set<String> dict = new HashSet<>(wordDict);

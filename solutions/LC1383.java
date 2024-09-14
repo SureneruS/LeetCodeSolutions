@@ -20,8 +20,5 @@ class Solution {
         int speedi = speed[i];
         int effi = efficiency[i];
         int perfi = speedi * effi;
-        
-
-
     }
 }

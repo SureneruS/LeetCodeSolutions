@@ -1,24 +1,5 @@
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
-
-/**
- * LC749.java
- */
-public class LC749 {
-    public static void main(String[] args) {
-        var sol = new Solution();
-
-        int[][][] testCases = {{{0,1,0,0,0,0,0,1},{0,1,0,0,0,0,0,1},{0,0,0,0,0,0,0,1},{0,0,0,0,0,0,0,0}}};
-
-        for(var testCase : testCases) {
-            System.out.println(sol.containVirus(testCase));
-        }
-    }
-    
-}
 
 record Pos(int x, int y) {}
 

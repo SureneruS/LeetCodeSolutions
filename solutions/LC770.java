@@ -3,38 +3,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.Stack;
-import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-/**
- * LC770
- */
-public class LC770 {
-
-    public static void main(String[] args) {
-        var sol = new Solution();
-        System.out.println(sol.basicCalculatorIV("e + 8 - a + 5", new String[] { "e" }, new int[] { 1 }));
-        System.out.println("------------------");
-
-        System.out.println(sol.basicCalculatorIV("e - 8 + temperature - pressure", new String[] { "e", "temperature" },
-                new int[] { 1, 12 }));
-        System.out.println("------------------");
-
-        System.out.println(sol.basicCalculatorIV("(e + 8) * (e - 8)", new String[] {}, new int[] {}));
-        System.out.println("------------------");
-
-        System.out.println(sol.basicCalculatorIV("a * b * c + b * a * c * 4", new String[] {}, new int[] {}));
-        System.out.println("------------------");
-
-        System.out.println(sol.basicCalculatorIV("e * ((e + 8) * (e - 8)) * e", new String[] {}, new int[] {}));
-        System.out.println("------------------");
-    }
-}
 
 enum Symbol {
     Multiply,
