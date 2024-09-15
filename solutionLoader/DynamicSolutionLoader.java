@@ -4,8 +4,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.net.URL;
+import java. net.URL;
 import java.net.URLClassLoader;
 import java.util.Arrays;
 import java.util.List;
@@ -17,14 +16,13 @@ public class DynamicSolutionLoader {
 
     private static final String SOLUTIONS_DIRECTORY = "solutions";
     private static final String COMPILED_DIRECTORY = "compiled_solutions";
-    private static final String SOLUTION_CLASS_NAME = "Solution";
     private static final String SOURCE_FILE_EXTENSION = ".java";
     private static final String TEST_CASES_METHOD_NAME = "getTestCases";
+    private static final String SOLUTION_CLASS_NAME = "Solution";
     private static final Logger LOGGER = Logger.getLogger(DynamicSolutionLoader.class.getName());
 
     static {
-        System.setProperty("java.util.logging.SimpleFormatter.format",
-                "%5$s");
+        System.setProperty("java.util.logging.SimpleFormatter.format", "%5$s");
     }
 
     public static List<Object> executeTestCases(String problemId) throws Exception {
@@ -38,8 +36,7 @@ public class DynamicSolutionLoader {
         Object instance = constructor.newInstance();
 
         Method getTestCasesMethod = findMethodByName(solutionClass, TEST_CASES_METHOD_NAME)
-                .orElseThrow(
-                        () -> new RuntimeException("Test cases method not found in class " + solutionClass.getName()));
+                .orElseThrow(() -> new RuntimeException("Test cases method not found in class " + solutionClass.getName()));
         getTestCasesMethod.setAccessible(true);
 
         @SuppressWarnings("unchecked")
@@ -50,8 +47,7 @@ public class DynamicSolutionLoader {
         }
 
         Method solutionMethod = findSolutionMethod(solutionClass, testCases.get(0))
-                .orElseThrow(() -> new RuntimeException(
-                        "Suitable solution method not found in class " + solutionClass.getName()));
+                .orElseThrow(() -> new RuntimeException("Suitable solution method not found in class " + solutionClass.getName()));
         solutionMethod.setAccessible(true);
 
         return testCases.stream()
@@ -59,7 +55,7 @@ public class DynamicSolutionLoader {
                     try {
                         Object result = solutionMethod.invoke(instance, testCase);
                         LOGGER.log(Level.INFO,
-                                "\nI: " + Arrays.toString(testCase) + "\nO: " + result.toString() + "\n");
+"\nI: " + Arrays.toString(testCase) + "\nO: " + result.toString() + "\n");
                         return solutionMethod.invoke(instance, testCase);
                     } catch (Exception e) {
                         LOGGER.log(Level.SEVERE, "Error executing test case: " + Arrays.toString(testCase), e);
@@ -71,8 +67,7 @@ public class DynamicSolutionLoader {
 
     private static Optional<Method> findSolutionMethod(Class<?> clazz, Object[] sampleTestCase) {
         return Arrays.stream(clazz.getDeclaredMethods())
-                .filter(method -> Modifier.isPublic(method.getModifiers())
-                        && !method.getName().equals(TEST_CASES_METHOD_NAME)
+                .filter(method -> !method.getName().equals(TEST_CASES_METHOD_NAME)
                         && method.getParameterCount() == sampleTestCase.length)
                 .findFirst();
     }
@@ -83,7 +78,7 @@ public class DynamicSolutionLoader {
         if (shouldCompile(sourceFilePath)) {
             compileSourceFile(sourceFilePath);
         }
-        return loadCompiledClass();
+        return loadSolutionClassInternal(sourceFilePath);
     }
 
     private static String buildSourceFilePath(String problemId) {
@@ -98,9 +93,16 @@ public class DynamicSolutionLoader {
     }
 
     private static boolean shouldCompile(String sourceFilePath) {
-        File compiledFile = new File(COMPILED_DIRECTORY + File.separator + SOLUTION_CLASS_NAME + ".class");
         File sourceFile = new File(sourceFilePath);
-        return !compiledFile.exists() || sourceFile.lastModified() > compiledFile.lastModified();
+        File compiledDir = new File(COMPILED_DIRECTORY);
+        
+        if (!compiledDir.exists()) {
+            return true;
+        }
+
+        return Arrays.stream(compiledDir.listFiles())
+                .filter(file -> file.getName().endsWith(".class"))
+                .allMatch(file -> sourceFile.lastModified() > file.lastModified());
     }
 
     private static void compileSourceFile(String sourceFilePath) throws IOException {
@@ -125,10 +127,31 @@ public class DynamicSolutionLoader {
         }
     }
 
-    private static Class<?> loadCompiledClass() throws IOException, ClassNotFoundException {
+    private static Class<?> loadSolutionClassInternal(String sourceFilePath) throws IOException, ClassNotFoundException {
         URL[] classPath = { new File(COMPILED_DIRECTORY).toURI().toURL() };
         try (URLClassLoader classLoader = new URLClassLoader(classPath)) {
-            return classLoader.loadClass(SOLUTION_CLASS_NAME);
+            File compiledDir = new File(COMPILED_DIRECTORY);
+            File[] classFiles = compiledDir.listFiles((dir, name) -> name.endsWith(".class"));
+            
+            if (classFiles == null || classFiles.length == 0) {
+                throw new ClassNotFoundException("No compiled classes found in " + COMPILED_DIRECTORY);
+            }
+            
+            Class <?> solutionClass = null;
+
+            for (File classFile : classFiles) {
+                String className = classFile.getName().replace(".class", "");
+                Class<?> loadedClass = classLoader.loadClass(className);
+                if (loadedClass.getSimpleName().equals(SOLUTION_CLASS_NAME)) {
+                    solutionClass = loadedClass;
+                }
+            }
+            
+            if (solutionClass == null) {
+                throw new ClassNotFoundException("Solution class not found in compiled classes");
+            }
+
+            return solutionClass;
         }
     }
 
