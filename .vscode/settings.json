@@ -2,5 +2,7 @@
     "java.project.sourcePaths": [
         "solutionLoader"
     ],
-    "java.project.referencedLibraries": []
+    "java.project.referencedLibraries": [],
+    "IDX.aI.enableInlineCompletion": true,
+    "IDX.aI.enableCodebaseIndexing": true
 }

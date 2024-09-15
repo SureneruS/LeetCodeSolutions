@@ -21,10 +21,6 @@ public class DynamicSolutionLoader {
     private static final String SOLUTION_CLASS_NAME = "Solution";
     private static final Logger LOGGER = Logger.getLogger(DynamicSolutionLoader.class.getName());
 
-    static {
-        System.setProperty("java.util.logging.SimpleFormatter.format", "%5$s");
-    }
-
     public static List<Object> executeTestCases(String problemId) throws Exception {
         Class<?> solutionClass = loadSolutionClass(problemId);
         return executeTestCases(solutionClass);
@@ -54,9 +50,12 @@ public class DynamicSolutionLoader {
                 .map(testCase -> {
                     try {
                         Object result = solutionMethod.invoke(instance, testCase);
-                        LOGGER.log(Level.INFO,
-"\nI: " + Arrays.toString(testCase) + "\nO: " + result.toString() + "\n");
-                        return solutionMethod.invoke(instance, testCase);
+                        if (result == null) {
+                            result = testCase;
+                        }
+
+                        LOGGER.log(Level.INFO, "\nI: " + Arrays.toString(testCase) + "\nO: " + result.toString() + "\n");
+                        return result;
                     } catch (Exception e) {
                         LOGGER.log(Level.SEVERE, "Error executing test case: " + Arrays.toString(testCase), e);
                         return null;
@@ -75,9 +74,8 @@ public class DynamicSolutionLoader {
     private static Class<?> loadSolutionClass(String problemId) throws IOException, ClassNotFoundException {
         String sourceFilePath = buildSourceFilePath(problemId);
         ensureFileExists(sourceFilePath);
-        if (shouldCompile(sourceFilePath)) {
-            compileSourceFile(sourceFilePath);
-        }
+        compileSourceFile(sourceFilePath);
+        
         return loadSolutionClassInternal(sourceFilePath);
     }
 
@@ -90,19 +88,6 @@ public class DynamicSolutionLoader {
         if (!file.exists() || !file.isFile()) {
             throw new IOException("Source file not found or is not a valid file: " + filePath);
         }
-    }
-
-    private static boolean shouldCompile(String sourceFilePath) {
-        File sourceFile = new File(sourceFilePath);
-        File compiledDir = new File(COMPILED_DIRECTORY);
-        
-        if (!compiledDir.exists()) {
-            return true;
-        }
-
-        return Arrays.stream(compiledDir.listFiles())
-                .filter(file -> file.getName().endsWith(".class"))
-                .allMatch(file -> sourceFile.lastModified() > file.lastModified());
     }
 
     private static void compileSourceFile(String sourceFilePath) throws IOException {
