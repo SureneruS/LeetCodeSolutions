@@ -22,7 +22,8 @@
             "name": "Main",
             "request": "launch",
             "mainClass": "solutionLoader.Main",
-            "projectName": "javasrc_bb9fbc86"
+            "projectName": "javasrc_bb9fbc86",
+            "args": "LC139"
         }
     ]
 }

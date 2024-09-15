@@ -4,9 +4,11 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -17,19 +19,55 @@ public class DynamicSolutionLoader {
     private static final String COMPILED_DIRECTORY = "compiled_solutions";
     private static final String SOLUTION_CLASS_NAME = "Solution";
     private static final String SOURCE_FILE_EXTENSION = ".java";
+    private static final String TEST_CASES_METHOD_NAME = "getTestCases";
     private static final Logger LOGGER = Logger.getLogger(DynamicSolutionLoader.class.getName());
 
-    public static Object executeSolution(String problemId, Object... params) throws Exception {
-        return executeSolutionWithMethod(problemId, Optional.empty(), params);
-    }
-
-    public static Object executeSolutionWithMethod(String problemId, String methodName, Object... params) throws Exception {
-        return executeSolutionWithMethod(problemId, Optional.of(methodName), params);
-    }
-
-    private static Object executeSolutionWithMethod(String problemId, Optional<String> methodName, Object... params) throws Exception {
+    public static List<Object> executeTestCases(String problemId) throws Exception {
         Class<?> solutionClass = loadSolutionClass(problemId);
-        return invokeSolutionMethod(solutionClass, methodName, params);
+        return executeTestCases(solutionClass);
+    }
+
+    private static List<Object> executeTestCases(Class<?> solutionClass) throws Exception {
+        Constructor<?> constructor = solutionClass.getDeclaredConstructor();
+        constructor.setAccessible(true);
+        Object instance = constructor.newInstance();
+
+        Method getTestCasesMethod = findMethodByName(solutionClass, TEST_CASES_METHOD_NAME)
+                .orElseThrow(() -> new RuntimeException("Test cases method not found in class " + solutionClass.getName()));
+        getTestCasesMethod.setAccessible(true);
+
+        List<Object[]> testCases = (List<Object[]>) getTestCasesMethod.invoke(instance);
+        
+        if (testCases.isEmpty()) {
+            throw new RuntimeException("No test cases found in class " + solutionClass.getName());
+        }
+
+        Method solutionMethod = findSolutionMethod(solutionClass, testCases.get(0))
+                .orElseThrow(() -> new RuntimeException("Suitable solution method not found in class " + solutionClass.getName()));
+        solutionMethod.setAccessible(true);
+
+        return testCases.stream()
+                .map(testCase -> {
+                    try {
+                        Object result = solutionMethod.invoke(instance, testCase);
+                        LOGGER.log(Level.INFO, "\nINPUT\n" + Arrays.toString(testCase) + "\n\nOUTPUT\n" + result.toString());
+                        return solutionMethod.invoke(instance, testCase);
+                    } catch (Exception e) {
+                        LOGGER.log(Level.SEVERE, "Error executing test case: " + Arrays.toString(testCase), e);
+                        return null;
+                    }
+                })
+                .toList();
+    }
+
+    private static Optional<Method> findSolutionMethod(Class<?> clazz, Object[] sampleTestCase) {
+        Arrays.stream(sampleTestCase).map(Object::getClass).forEach(clazzz -> LOGGER.info(clazzz.getName()));
+        Arrays.stream(clazz.getDeclaredMethods()).filter(method -> Modifier.isPublic(method.getModifiers()) && !method.getName().equals(TEST_CASES_METHOD_NAME) && method.getParameterCount() == sampleTestCase.length).forEach(method -> {
+            LOGGER.info(method.getName());
+            Arrays.stream(method.getParameterTypes()).forEach(zzz -> LOGGER.info(zzz.getName()));
+        });
+        return Arrays.stream(clazz.getDeclaredMethods()).filter(method -> Modifier.isPublic(method.getModifiers()) && !method.getName().equals(TEST_CASES_METHOD_NAME) && method.getParameterCount() == sampleTestCase.length)
+                .findFirst();
     }
 
     private static Class<?> loadSolutionClass(String problemId) throws IOException, ClassNotFoundException {
@@ -86,30 +124,9 @@ public class DynamicSolutionLoader {
         }
     }
 
-    private static Object invokeSolutionMethod(Class<?> solutionClass, Optional<String> methodName, Object... params) throws Exception {
-        Constructor<?> constructor = solutionClass.getDeclaredConstructor();
-        constructor.setAccessible(true);
-        Object instance = constructor.newInstance();
-
-        Method method = methodName
-                .map(name -> findMethodByName(solutionClass, name, params)
-                        .orElseThrow(() -> new RuntimeException("Method " + name + " not found in class " + solutionClass.getName())))
-                .orElse(findFirstPublicMethod(solutionClass));
-        method.setAccessible(true);
-        LOGGER.log(Level.INFO, "Executing method {0}", method.getName());
-        return method.invoke(instance, params);
-    }
-
-    private static Method findFirstPublicMethod(Class<?> clazz) {
+    private static Optional<Method> findMethodByName(Class<?> clazz, String methodName) {
         return Arrays.stream(clazz.getDeclaredMethods())
-                .filter(method -> java.lang.reflect.Modifier.isPublic(method.getModifiers()))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("No public method found in class " + clazz.getName()));
-    }
-
-    private static Optional<Method> findMethodByName(Class<?> clazz, String methodName, Object[] params) {
-        return Arrays.stream(clazz.getDeclaredMethods())
-                .filter(method -> method.getName().equals(methodName) && method.getParameterCount() == params.length)
+                .filter(method -> method.getName().equals(methodName))
                 .findFirst();
     }
 }

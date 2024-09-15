@@ -30,4 +30,13 @@ class Solution {
 
         return dp[i] = -1;
     }
+
+    public List<Object[]> getTestCases() {
+        return List.of(
+            new Object[][]{{
+                "HelloWorld", 
+                List.of("Hello", "World")
+            }}  
+        );
+    }
 }
