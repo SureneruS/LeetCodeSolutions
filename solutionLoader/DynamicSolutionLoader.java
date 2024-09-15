@@ -1,5 +1,7 @@
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -53,29 +55,27 @@ public class DynamicSolutionLoader {
     private static boolean shouldCompile(String sourceFilePath) {
         File compiledFile = new File(COMPILED_DIRECTORY + File.separator + SOLUTION_CLASS_NAME + ".class");
         File sourceFile = new File(sourceFilePath);
-
         return !compiledFile.exists() || sourceFile.lastModified() > compiledFile.lastModified();
     }
 
     private static void compileSourceFile(String sourceFilePath) throws IOException {
         javax.tools.JavaCompiler compiler = javax.tools.ToolProvider.getSystemJavaCompiler();
-
         if (compiler == null) {
             throw new IOException("No Java compiler available. Ensure you're running on a JDK, not a JRE.");
         }
 
         File compiledDir = new File(COMPILED_DIRECTORY);
-        if (!compiledDir.exists()) {
-            if (!compiledDir.mkdirs()) {
-                throw new IOException("Failed to create compiled directory: " + COMPILED_DIRECTORY);
-            }
+        if (!compiledDir.exists() && !compiledDir.mkdirs()) {
+            throw new IOException("Failed to create compiled directory: " + COMPILED_DIRECTORY);
         }
 
-        LOGGER.log(Level.INFO, "Compiling source file: {0}", sourceFilePath);
-        int compilationResult = compiler.run(null, null, null, "-d", COMPILED_DIRECTORY, sourceFilePath);
+        OutputStream compilationOutputStream = new ByteArrayOutputStream();
+        int compilationResult = compiler.run(null, compilationOutputStream, compilationOutputStream, "-d", COMPILED_DIRECTORY, sourceFilePath);
+
+        LOGGER.log(Level.INFO, compilationOutputStream.toString());
 
         if (compilationResult != 0) {
-            throw new IOException("Compilation failed for file: " + sourceFilePath);
+            throw new IOException("Compilation failed for file: \n" + sourceFilePath);
         }
     }
 
@@ -93,18 +93,18 @@ public class DynamicSolutionLoader {
 
         Method method = methodName
                 .map(name -> findMethodByName(solutionClass, name, params)
-                        .orElseThrow(() -> new NoSuchMethodException("Method " + name + " not found in class " + solutionClass.getName())))
+                        .orElseThrow(() -> new RuntimeException("Method " + name + " not found in class " + solutionClass.getName())))
                 .orElse(findFirstPublicMethod(solutionClass));
-
-        LOGGER.log(Level.INFO, "Executing method {0} with parameters {1}", new Object[]{method.getName(), Arrays.toString(params)});
+        method.setAccessible(true);
+        LOGGER.log(Level.INFO, "Executing method {0}", method.getName());
         return method.invoke(instance, params);
     }
 
-    private static Method findFirstPublicMethod(Class<?> clazz) throws NoSuchMethodException {
+    private static Method findFirstPublicMethod(Class<?> clazz) {
         return Arrays.stream(clazz.getDeclaredMethods())
                 .filter(method -> java.lang.reflect.Modifier.isPublic(method.getModifiers()))
                 .findFirst()
-                .orElseThrow(() -> new NoSuchMethodException("No public method found in class " + clazz.getName()));
+                .orElseThrow(() -> new RuntimeException("No public method found in class " + clazz.getName()));
     }
 
     private static Optional<Method> findMethodByName(Class<?> clazz, String methodName, Object[] params) {
