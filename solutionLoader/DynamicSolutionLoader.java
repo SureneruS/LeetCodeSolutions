@@ -50,7 +50,7 @@ public class DynamicSolutionLoader {
                 .map(testCase -> {
                     try {
                         Object result = solutionMethod.invoke(instance, testCase);
-                        LOGGER.log(Level.INFO, "\nINPUT\n" + Arrays.toString(testCase) + "\n\nOUTPUT\n" + result.toString());
+                        LOGGER.log(Level.INFO, "\n\n" + Arrays.toString(testCase) + "\n\n" + result.toString() + "\n");
                         return solutionMethod.invoke(instance, testCase);
                     } catch (Exception e) {
                         LOGGER.log(Level.SEVERE, "Error executing test case: " + Arrays.toString(testCase), e);
@@ -61,11 +61,6 @@ public class DynamicSolutionLoader {
     }
 
     private static Optional<Method> findSolutionMethod(Class<?> clazz, Object[] sampleTestCase) {
-        Arrays.stream(sampleTestCase).map(Object::getClass).forEach(clazzz -> LOGGER.info(clazzz.getName()));
-        Arrays.stream(clazz.getDeclaredMethods()).filter(method -> Modifier.isPublic(method.getModifiers()) && !method.getName().equals(TEST_CASES_METHOD_NAME) && method.getParameterCount() == sampleTestCase.length).forEach(method -> {
-            LOGGER.info(method.getName());
-            Arrays.stream(method.getParameterTypes()).forEach(zzz -> LOGGER.info(zzz.getName()));
-        });
         return Arrays.stream(clazz.getDeclaredMethods()).filter(method -> Modifier.isPublic(method.getModifiers()) && !method.getName().equals(TEST_CASES_METHOD_NAME) && method.getParameterCount() == sampleTestCase.length)
                 .findFirst();
     }
