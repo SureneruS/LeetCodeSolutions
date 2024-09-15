@@ -22,6 +22,11 @@ public class DynamicSolutionLoader {
     private static final String TEST_CASES_METHOD_NAME = "getTestCases";
     private static final Logger LOGGER = Logger.getLogger(DynamicSolutionLoader.class.getName());
 
+    static {
+        System.setProperty("java.util.logging.SimpleFormatter.format",
+                "%5$s");
+    }
+
     public static List<Object> executeTestCases(String problemId) throws Exception {
         Class<?> solutionClass = loadSolutionClass(problemId);
         return executeTestCases(solutionClass);
@@ -33,24 +38,28 @@ public class DynamicSolutionLoader {
         Object instance = constructor.newInstance();
 
         Method getTestCasesMethod = findMethodByName(solutionClass, TEST_CASES_METHOD_NAME)
-                .orElseThrow(() -> new RuntimeException("Test cases method not found in class " + solutionClass.getName()));
+                .orElseThrow(
+                        () -> new RuntimeException("Test cases method not found in class " + solutionClass.getName()));
         getTestCasesMethod.setAccessible(true);
 
+        @SuppressWarnings("unchecked")
         List<Object[]> testCases = (List<Object[]>) getTestCasesMethod.invoke(instance);
-        
+
         if (testCases.isEmpty()) {
             throw new RuntimeException("No test cases found in class " + solutionClass.getName());
         }
 
         Method solutionMethod = findSolutionMethod(solutionClass, testCases.get(0))
-                .orElseThrow(() -> new RuntimeException("Suitable solution method not found in class " + solutionClass.getName()));
+                .orElseThrow(() -> new RuntimeException(
+                        "Suitable solution method not found in class " + solutionClass.getName()));
         solutionMethod.setAccessible(true);
 
         return testCases.stream()
                 .map(testCase -> {
                     try {
                         Object result = solutionMethod.invoke(instance, testCase);
-                        LOGGER.log(Level.INFO, "\n\n" + Arrays.toString(testCase) + "\n\n" + result.toString() + "\n");
+                        LOGGER.log(Level.INFO,
+                                "\nI: " + Arrays.toString(testCase) + "\nO: " + result.toString() + "\n");
                         return solutionMethod.invoke(instance, testCase);
                     } catch (Exception e) {
                         LOGGER.log(Level.SEVERE, "Error executing test case: " + Arrays.toString(testCase), e);
@@ -61,7 +70,10 @@ public class DynamicSolutionLoader {
     }
 
     private static Optional<Method> findSolutionMethod(Class<?> clazz, Object[] sampleTestCase) {
-        return Arrays.stream(clazz.getDeclaredMethods()).filter(method -> Modifier.isPublic(method.getModifiers()) && !method.getName().equals(TEST_CASES_METHOD_NAME) && method.getParameterCount() == sampleTestCase.length)
+        return Arrays.stream(clazz.getDeclaredMethods())
+                .filter(method -> Modifier.isPublic(method.getModifiers())
+                        && !method.getName().equals(TEST_CASES_METHOD_NAME)
+                        && method.getParameterCount() == sampleTestCase.length)
                 .findFirst();
     }
 
@@ -103,7 +115,8 @@ public class DynamicSolutionLoader {
         }
 
         OutputStream compilationOutputStream = new ByteArrayOutputStream();
-        int compilationResult = compiler.run(null, compilationOutputStream, compilationOutputStream, "-d", COMPILED_DIRECTORY, sourceFilePath);
+        int compilationResult = compiler.run(null, compilationOutputStream, compilationOutputStream, "-d",
+                COMPILED_DIRECTORY, sourceFilePath);
 
         LOGGER.log(Level.INFO, compilationOutputStream.toString());
 
@@ -113,7 +126,7 @@ public class DynamicSolutionLoader {
     }
 
     private static Class<?> loadCompiledClass() throws IOException, ClassNotFoundException {
-        URL[] classPath = {new File(COMPILED_DIRECTORY).toURI().toURL()};
+        URL[] classPath = { new File(COMPILED_DIRECTORY).toURI().toURL() };
         try (URLClassLoader classLoader = new URLClassLoader(classPath)) {
             return classLoader.loadClass(SOLUTION_CLASS_NAME);
         }
